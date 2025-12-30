@@ -1,0 +1,106 @@
+import datetime
+from datetime import date, timedelta
+# تم تغيير سطر الاستيراد للسماح بالوصول إلى ثوابت الوحدة (MINYEAR, MAXYEAR)
+
+# --------------------------------------------------------------------------------------------------
+# Problem 1: Computing the number of days in a month (No Change Needed Here)
+# --------------------------------------------------------------------------------------------------
+def days_in_month(year, month):
+    # ... (Implementation remains the same)
+    if month == 12:
+        next_month = 1
+        next_year = year + 1
+    else:
+        next_month = month + 1
+        next_year = year
+        
+    current_month_start = date(year, month, 1)
+    next_month_start = date(next_year, next_month, 1)
+    difference = next_month_start - current_month_start
+    return difference.days
+
+# --------------------------------------------------------------------------------------------------
+# Problem 2: Checking if a date is valid (CRUCIAL FIX HERE)
+# --------------------------------------------------------------------------------------------------
+def is_valid_date(year, month, day):
+    # 1. Check year range (CRUCIAL FIX: using the module name 'datetime')
+    if not (datetime.MINYEAR <= year <= datetime.MAXYEAR):
+        return False
+    
+    # 2. Check month range
+    if not (1 <= month <= 12):
+        return False
+        
+    # 3. Check day range
+    if day < 1:
+        return False
+        
+    # 4. Use days_in_month to determine maximum valid day
+    max_days = days_in_month(year, month)
+    
+    if day > max_days:
+        return False
+        
+    return True
+
+# --------------------------------------------------# ==============================================================================
+# Testing and Verification (يجب إزالة هذا الجزء عند التسليم النهائي)
+# ==============================================================================
+import datetime
+from datetime import date # Assuming your functions are defined above this line
+
+print("\n-------------------------------------------")
+print("--- 1. Testing days_in_month ---")
+print("-------------------------------------------")
+# Case 1: 31-day month (January)
+print(f"Days in Jan 2023: {days_in_month(2023, 1)}")      # Expected: 31
+# Case 2: 30-day month (April)
+print(f"Days in Apr 2023: {days_in_month(2023, 4)}")      # Expected: 30
+# Case 3: February (Leap Year - 2024)
+print(f"Days in Feb 2024 (Leap): {days_in_month(2024, 2)}") # Expected: 29
+# Case 4: February (Non-Leap Year - 2023)
+print(f"Days in Feb 2023: {days_in_month(2023, 2)}")      # Expected: 28
+
+
+print("\n-------------------------------------------")
+print("--- 2. Testing is_valid_date ---")
+print("-------------------------------------------")
+# Case 5: Valid date
+print(f"2024-02-29 is valid: {is_valid_date(2024, 2, 29)}")      # Expected: True
+# Case 6: Invalid day (31 days in a 30-day month)
+print(f"2023-04-31 is valid: {is_valid_date(2023, 4, 31)}")      # Expected: False
+# Case 7: Invalid leap day (Feb 29 in non-leap year)
+print(f"2023-02-29 is valid: {is_valid_date(2023, 2, 29)}")      # Expected: False
+# Case 8: Invalid month
+print(f"2023-13-01 is valid: {is_valid_date(2023, 13, 1)}")      # Expected: False
+
+
+print("\n-------------------------------------------")
+print("--- 3. Testing days_between ---")
+print("-------------------------------------------")
+# Case 9: Standard difference (30 days)
+print(f"Days between 2023-01-01 and 2023-01-31: {days_between(2023, 1, 1, 2023, 1, 31)}") # Expected: 30
+# Case 10: Dates are the same
+print(f"Days between 2023-03-05 and 2023-03-05: {days_between(2023, 3, 5, 2023, 3, 5)}") # Expected: 0
+# Case 11: Date 2 is BEFORE Date 1 (Invalid order)
+print(f"Days between 2023-01-31 and 2023-01-01: {days_between(2023, 1, 31, 2023, 1, 1)}") # Expected: 0
+# Case 12: Invalid Date 1
+print(f"Days with invalid date: {days_between(2023, 2, 30, 2023, 3, 1)}") # Expected: 0
+
+
+print("\n-------------------------------------------")
+print("--- 4. Testing age_in_days ---")
+print("-------------------------------------------")
+# Case 13: Standard birthday (Age calculation)
+# Note: The result depends on today's date (2025-12-06)
+print(f"Age in days for 2000-01-01: {age_in_days(2000, 1, 1)}") 
+# Expected: 9405 days (as of 2025-12-06)
+
+# Case 14: Birthday in the future
+today = date.today()
+print(f"Age for future birthday ({today.year + 1}-01-01): {age_in_days(today.year + 1, 1, 1)}") 
+# Expected: 0 (Handled by days_between check)------------------------------------------------
+# Problem 3 & 4: (No functional changes needed - logic relies on the functions above)
+# --------------------------------------------------------------------------------------------------
+
+# ... (Continue with the definitions of days_between and age_in_days as before)

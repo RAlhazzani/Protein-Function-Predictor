@@ -1,0 +1,7 @@
+d1 = {'IKZF1':10, 'MYC':5, 'MAPK1':5}
+
+L1 = []
+for k,v in d1.items():
+    if v>7:
+        L1.append(str(k))
+        print(L1) 
