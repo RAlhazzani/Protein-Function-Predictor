@@ -7,140 +7,138 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 # ---------------------------------------------------------
-# الجزء 1: استخراج الخصائص الحيوية (Bioinformatics Part)
-# هذا الكود يحول "الحروف" إلى "أرقام" يفهمها الكمبيوتر
+# Part 1: Bioinformatics Feature Extraction
+# This section converts amino acid sequences into numerical data.
 # ---------------------------------------------------------
 def get_protein_features(sequence):
     """
-    دالة تأخذ تسلسل البروتين وتعيد خصائصه الكيميائية والفيزيائية
+    Extracts physicochemical properties from a protein sequence.
     """
     try:
-        # التأكد من أن التسلسل حروف كبيرة (Upper case)
+        # Ensure the sequence is in uppercase
         seq = sequence.upper()
         
-        # استخدام مكتبة BioPython لتحليل البروتين
+        # Use BioPython for protein analysis
         analysed_seq = ProteinAnalysis(seq)
         
-        # استخراج الخصائص (هذه هي الـ Features للموديل)
+        # Extract features (These act as input features for the model)
         features = {
-            'Molecular_Weight': analysed_seq.molecular_weight(), # الوزن الجزيئي
-            'Aromaticity': analysed_seq.aromaticity(),           # العطرية
-            'Instability_Index': analysed_seq.instability_index(), # معامل عدم الاستقرار
-            'Isoelectric_Point': analysed_seq.isoelectric_point(), # نقطة التعادل الكهربائي
-            'Helix_Fraction': analysed_seq.secondary_structure_fraction()[0] # نسبة الحلزون
+            'Molecular_Weight': analysed_seq.molecular_weight(),
+            'Aromaticity': analysed_seq.aromaticity(),
+            'Instability_Index': analysed_seq.instability_index(),
+            'Isoelectric_Point': analysed_seq.isoelectric_point(),
+            'Helix_Fraction': analysed_seq.secondary_structure_fraction()[0]
         }
         return features
     except Exception as e:
         return None
 
 # ---------------------------------------------------------
-# الجزء 2: تجهيز البيانات وتدريب الموديل (Machine Learning Part)
-# في الوضع الحقيقي، نستبدل هذا الجزء بقراءة ملف CSV
+# Part 2: Data Preparation & Model Training (Machine Learning)
+# In a real-world scenario, this would load a CSV dataset.
 # ---------------------------------------------------------
-@st.cache_resource  # هذا السطر يجعل Streamlit يحفظ الموديل في الذاكرة لسرعة الأداء
+@st.cache_resource  # Caches the model to improve app performance
 def train_model():
-    # 1. إنشاء بيانات وهمية للتدريب (لغرض التجربة الفورية)
-    # سنفترض أننا نصنف البروتينات إلى: (Soluble) و (Insoluble)
+    # 1. Generate synthetic data for demonstration purposes
+    # Classifying proteins into: 'Soluble' vs 'Insoluble'
     data = []
     labels = []
     
-    # توليد 100 بروتين عشوائي (محاكاة)
+    # Generate 100 random synthetic protein sequences
     amino_acids = "ACDEFGHIKLMNPQRSTVWY"
     for _ in range(100):
-        # إنشاء تسلسل عشوائي
+        # Create a random sequence
         seq_len = np.random.randint(50, 200)
         seq = "".join(np.random.choice(list(amino_acids), seq_len))
         
-        # استخراج خصائصه
+        # Extract features
         feats = get_protein_features(seq)
         
-        # وضع قاعدة تصنيف "وهمية" بسيطة لكي يتعلم الموديل شيئاً:
-        # إذا الوزن الجزيئي عالي والـ Isoelectric point عالي -> نعتبره Insoluble (1)
-        # وإلا -> Soluble (0)
-        # (ملاحظة: هذا تبسيط علمي شديد فقط لغرض الكود)
+        # Define a simple synthetic rule for classification:
+        # If High Molecular Weight & High Isoelectric Point -> Insoluble
+        # Else -> Soluble
         if feats['Molecular_Weight'] > 100 and feats['Isoelectric_Point'] > 6:
-            label = "Insoluble (غير ذائب)"
+            label = "Insoluble"
         else:
-            label = "Soluble (ذائب)"
+            label = "Soluble"
             
         data.append(list(feats.values()))
         labels.append(label)
 
-    # 2. تحويل البيانات لجدول (DataFrame)
+    # 2. Convert data to a DataFrame
     df = pd.DataFrame(data, columns=['Molecular_Weight', 'Aromaticity', 'Instability_Index', 'Isoelectric_Point', 'Helix_Fraction'])
     
-    # 3. تدريب الموديل
-    X = df  # الخصائص (Inputs)
-    y = labels  # النتيجة المطلوبة (Outputs)
+    # 3. Train the Model
+    X = df  # Features
+    y = labels  # Target variable
     
-    # تقسيم البيانات لتدريب واختبار
+    # Split into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # إنشاء الموديل (Random Forest)
+    # Initialize and train Random Forest Classifier
     model = RandomForestClassifier(n_estimators=100)
     model.fit(X_train, y_train)
     
-    # حساب الدقة
+    # Calculate Accuracy
     acc = accuracy_score(y_test, model.predict(X_test))
     
     return model, acc
 
 # ---------------------------------------------------------
-# الجزء 3: واجهة المستخدم (Web App Interface)
-# هذا ما سيظهر على الشاشة
+# Part 3: Web Application Interface (Streamlit)
 # ---------------------------------------------------------
 
-# إعداد الصفحة
+# Page Configuration
 st.set_page_config(page_title="Protein Classifier AI", page_icon="🧬")
 
-# العنوان والمقدمة
+# Title and Description
 st.title("🧬 AI Protein Function Predictor")
 st.markdown("""
-هذا التطبيق يستخدم **الذكاء الاصطناعي (Machine Learning)** لتوقع خصائص البروتين 
-بناءً على خصائصه الفيزيائية والكيميائية.
+This application leverages **Machine Learning** to predict protein solubility properties 
+based on physicochemical characteristics extracted from the amino acid sequence.
 """)
 
-# الشريط الجانبي (Sidebar)
-st.sidebar.header("معلومات الموديل")
+# Sidebar: Model Information
+st.sidebar.header("Model Performance")
 model, accuracy = train_model()
-st.sidebar.success(f"دقة الموديل الحالي: {accuracy * 100:.1f}%")
-st.sidebar.info("تم التدريب باستخدام خوارزمية Random Forest")
+st.sidebar.success(f"Model Accuracy: {accuracy * 100:.1f}%")
+st.sidebar.info("Algorithm: Random Forest Classifier")
 
-# منطقة إدخال البيانات
-input_sequence = st.text_area("أدخل تسلسل البروتين (Sequence) هنا:", height=150, placeholder="Example: MVLSPADKTNVKAAWGKVGAHAGEYGAE...")
+# Input Section
+input_sequence = st.text_area("Enter Amino Acid Sequence:", height=150, placeholder="Example: MVLSPADKTNVKAAWGKVGAHAGEYGAE...")
 
-# زر التوقع
-if st.button("تحليل وتوقع النتيجة 🚀"):
+# Prediction Button
+if st.button("Analyze & Predict 🚀"):
     if input_sequence:
-        # 1. استخراج الخصائص
+        # 1. Extract Features
         features = get_protein_features(input_sequence)
         
         if features:
-            # عرض الخصائص المستخرجة
-            st.subheader("1. الخصائص المستخرجة (Bio-Features):")
+            # Display Extracted Features
+            st.subheader("1. Extracted Bio-Features:")
             features_df = pd.DataFrame([features])
             st.table(features_df)
             
-            # 2. التوقع باستخدام الموديل
+            # 2. Make Prediction
             prediction = model.predict(features_df)[0]
             probability = model.predict_proba(features_df).max()
             
-            # عرض النتيجة
-            st.subheader("2. نتيجة الذكاء الاصطناعي:")
+            # Display Result
+            st.subheader("2. AI Prediction Result:")
             
-            # تلوين النتيجة
-            if "Soluble" in prediction:
-                st.success(f"النتيجة المتوقعة: **{prediction}**")
+            # Color-coded output
+            if "Soluble" == prediction:
+                st.success(f"Prediction: **{prediction}**")
             else:
-                st.warning(f"النتيجة المتوقعة: **{prediction}**")
+                st.warning(f"Prediction: **{prediction}**")
                 
-            st.write(f"نسبة الثقة (Confidence): **{probability*100:.2f}%**")
+            st.write(f"Confidence Score: **{probability*100:.2f}%**")
             
         else:
-            st.error("عذراً، التسلسل المدخل يحتوي على رموز غير صحيحة. تأكد من استخدام الأحماض الأمينية فقط.")
+            st.error("Error: The sequence contains invalid characters. Please use standard amino acid codes.")
     else:
-        st.warning("الرجاء إدخال تسلسل بروتين أولاً.")
+        st.warning("Please enter a protein sequence first.")
 
-# تذييل الصفحة
+# Footer
 st.markdown("---")
-st.caption("Developed by Raneem Alhazzani | 2600200@uj.edu.sa")
+st.caption("Developed by Raneem Alhazzani | ra.alhazzani@outlook.com")
